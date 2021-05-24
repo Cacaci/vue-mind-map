@@ -1,13 +1,39 @@
 <template>
   <div class="app-main">
     <div class="container">
-      <textarea class="app-note" name="note" id="note" cols="30" rows="10"></textarea>
+      <button @click="test">Click Me</button>
+      <textarea v-model="markdown" class="app-note" name="note" id="note" cols="30" rows="10"></textarea>
     </div>
     <div class="container">
-      <div class="app-map"></div>
+      <div class="app-map" id="app-map" v-html="markdownHTML"></div>
     </div>
   </div>
 </template>
+
+<script>
+import marked from '../lib/marked'
+export default {
+  data () {
+    return {
+      markdown: '- 1\n   - 2\n   - 3',
+      markdownHTML: ''
+    }
+  },
+  watch: {
+    markdown: function (n, o) {
+      // console.log(n, o)
+    }
+  },
+  methods: {
+    test () {
+      // { children:[{name:{ children:[{name:2}, {name:3}, ]} }, ]}
+      var html = marked(this.markdown)
+      this.markdownHTML = html
+      console.log(html)
+    }
+  }
+}
+</script>
 
 <style lang="less" scoped>
 .container {
@@ -41,5 +67,8 @@
   box-sizing: border-box;
   outline-color: #42b983;
   transition: all ease .3s;
+}
+.app-map {
+  text-align: left;
 }
 </style>
