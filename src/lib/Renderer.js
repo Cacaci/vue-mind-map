@@ -1,3 +1,4 @@
+/* eslint-disable */
 const { defaults } = require('./defaults.js')
 const {
   cleanUrl,
