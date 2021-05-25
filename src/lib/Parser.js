@@ -159,8 +159,8 @@ module.exports = class Parser {
             body += this.renderer.listitem(itemBody, task, checked)
           }
 
-          // out += this.renderer.list(body, ordered, start)
-          console.log(ordered, start)
+          out += this.renderer.list(body, ordered, start)
+          // console.log(ordered, start)
           out = '{' + 'title:' + j + ',' + 'children:[' + body + ']' + '}'
           continue
         }
@@ -174,7 +174,7 @@ module.exports = class Parser {
           continue
         }
         case 'text': {
-          debugger
+          // debugger
           body = token.tokens ? this.parseInline(token.tokens) : token.text
           while (i + 1 < l && tokens[i + 1].type === 'text') {
             token = tokens[++i]

@@ -26,7 +26,6 @@
 </template>
 
 <script>
-import marked from '../lib/marked'
 import MindMap from './MindMap'
 export default {
   components: {
@@ -34,7 +33,7 @@ export default {
   },
   data () {
     return {
-      markdown: '- 1\n   - 2\n   - 3',
+      markdown: '- Front end tech\n   - Compiler/language\n   - Reactive framework\n      - React\n      - Vue\n         - vue2.X\n   - packager\n      - Webpack\n      - Snowpack',
       markdownHTML: '',
       mindMapData: [
         {
@@ -83,17 +82,34 @@ export default {
       ]
     }
   },
-  watch: {
-    markdown: function (n, o) {
-      console.log(n, o)
-    }
-  },
   methods: {
     test () {
-      // { children:[{name:{ children:[{name:2}, {name:3}, ]} }, ]}
-      var html = marked(this.markdown)
-      this.markdownHTML = html
-      console.log(html)
+      var nodes = this.markdown.split(/\n/gi)
+      var _nodes = nodes.map((item, index) => ({
+        id: index + 1,
+        parent: item.split('- ')[0].length / 3,
+        title: item.replace(/\s*-\s/g, '')
+      })).sort((a, b) => b.id - a.id)
+
+      function handleListToTree (_nodes) {
+        var firstNode = _nodes.shift()
+        for (let i = 0; i < _nodes.length; i++) {
+          if (firstNode.parent - 1 === _nodes[i].parent) {
+            if (!_nodes[i].children) {
+              _nodes[i].children = [firstNode]
+            } else {
+              _nodes[i].children.push(firstNode)
+            }
+            break
+          }
+        }
+        if (_nodes.length > 1) {
+          handleListToTree(_nodes)
+        }
+      }
+      handleListToTree(_nodes)
+      console.log(_nodes)
+      this.mindMapData = _nodes
     }
   }
 }

@@ -1,13 +1,19 @@
 <template>
   <div class="svg-main">
     <div class="svg-zoom">
-      <span class="svg-zoom__out" @click="handleZoomOut">-</span>
+      <span
+        class="svg-zoom__out"
+        @click="handleZoomOut"
+      >-</span>
       <span class="svg-zoom__num">{{ zoomPercent }}%</span>
-      <span class="svg-zoom__in" @click="handleZoomIn">+</span>
+      <span
+        class="svg-zoom__in"
+        @click="handleZoomIn"
+      >+</span>
     </div>
     <div class="svg-map">
+      <!-- :viewBox='svgView' -->
       <svg
-        :viewBox='svgView'
         xmlns="http://www.w3.org/2000/svg"
         id="svgContainer"
         version="1.1"
@@ -29,11 +35,24 @@ export default {
     return {
       svgView: '0 0 567 428',
       zoomPercent: 100,
-      zoomVal: 50
+      zoomVal: 50,
+      mindMapDataLocal: []
     }
   },
   mounted () {
-    this.handleDrawMindMap()
+    this.mindMapDataLocal = this.mindMapData
+    // this.handleDrawMindMap()
+  },
+  watch: {
+    mindMapData: {
+      handler (n, o) {
+        // this.mindMapDataLocal = []
+        this.mindMapDataLocal = n
+        this.handleDrawMindMap()
+      },
+      // immediate: true,
+      deep: true
+    }
   },
   methods: {
     handleZoomOut () {
@@ -45,7 +64,8 @@ export default {
       this.svgView = this.svgView.split(' ').map(item => Math.round(Number(item) - this.zoomVal)).join(' ')
     },
     handleDrawMindMap () {
-      const treeData = this.mindMapData
+      const svg = document.getElementById('svgContainer')
+      const treeData = this.mindMapDataLocal
       // const nodeFontS = 14 // 字体大小
       const interval = 80 // 节点左右间隔大小
       const padding = 8 // 节点内部padding
@@ -54,8 +74,6 @@ export default {
       const fontColor = '#fff' // 默认字体颜色
       const borderColor = 'rgba(0, 0, 0, 0)' // 默认边框颜色
       const lineColor = '#55aaee' // 默认连线颜色
-
-      const svg = document.getElementById('svgContainer')
 
       let _svgW = 0
       let _lastNodeN = 0
@@ -170,7 +188,8 @@ export default {
       // 树状结构数据重构
       handleReBuildData(treeData, null)
       handleBuildSvg(treeData)
-      handleSetSvgContainerSize(_svgW, _lastNodeN * _nodeH + borderWidth)
+      handleSetSvgContainerSize(_lastNodeN * 150, _lastNodeN * _nodeH + borderWidth * 100)
+      // handleSetSvgContainerSize(_svgW, _lastNodeN * _nodeH + borderWidth)
     }
   }
 }
@@ -186,8 +205,8 @@ export default {
   height: 25px;
   // border: 1px solid #E2E2E2;
   box-shadow: 0px 2px 4px rgb(225 225 225 / 50%);
-  color: #EEEEEE;
-  background: #B4B4B4;
+  color: #eeeeee;
+  background: #b4b4b4;
   position: absolute;
   top: 15px;
   right: 15px;
