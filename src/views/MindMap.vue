@@ -1,6 +1,6 @@
 <template>
   <div class="svg-main">
-    <div class="svg-zoom">
+    <!-- <div class="svg-zoom">
       <span
         class="svg-zoom__out"
         @click="handleZoomOut"
@@ -10,15 +10,17 @@
         class="svg-zoom__in"
         @click="handleZoomIn"
       >+</span>
-    </div>
-    <div class="svg-map">
+    </div> -->
+    <div
+      class="svg-map"
+      id="svg-map"
+    >
       <!-- :viewBox='svgView' -->
-      <svg
+      <!-- <svg
         xmlns="http://www.w3.org/2000/svg"
         id="svgContainer"
-        version="1.1"
       >
-      </svg>
+      </svg> -->
     </div>
   </div>
 </template>
@@ -26,47 +28,76 @@
 <script>
 export default {
   props: {
-    mindMapData: {
+    mindMapTree: {
       type: Array,
       required: true
     }
   },
   data () {
     return {
-      svgView: '0 0 567 428',
-      zoomPercent: 100,
-      zoomVal: 50,
-      mindMapDataLocal: []
+      // svgView: '0 0 567 428',
+      // zoomPercent: 100,
+      // zoomVal: 50,
+      mindMapDataLocal: [],
+      options: {
+        rootId: 'svg-map',
+        svgId: 'svg-container',
+
+        interval: 80,
+        padding: 8,
+        marginY: 12,
+        borderWidth: 4,
+        fontColor: '#fff',
+        borderColor: 'rgba(0, 0, 0, 0)',
+        lineColor: '#55aaee'
+      }
     }
   },
   mounted () {
-    this.mindMapDataLocal = this.mindMapData
-    // this.handleDrawMindMap()
+    this.mindMapDataLocal = this.mindMapTree
   },
   watch: {
-    mindMapData: {
+    mindMapTree: {
       handler (n, o) {
-        // this.mindMapDataLocal = []
         this.mindMapDataLocal = n
-        this.handleDrawMindMap()
-      },
-      // immediate: true,
-      deep: true
+        this.$nextTick(() => {
+          const svgTag = document.getElementById('svg-container')
+          if (svgTag) {
+            svgTag.remove()
+          }
+          this.handleDrawMindMap()
+        })
+      }
     }
   },
   methods: {
-    handleZoomOut () {
-      this.zoomPercent -= 20
-      this.svgView = this.svgView.split(' ').map(item => Math.round(Number(item) + this.zoomVal)).join(' ')
-    },
-    handleZoomIn () {
-      this.zoomPercent += 20
-      this.svgView = this.svgView.split(' ').map(item => Math.round(Number(item) - this.zoomVal)).join(' ')
-    },
-    handleDrawMindMap () {
-      const svg = document.getElementById('svgContainer')
+    // handleZoomOut () {
+    //   this.zoomPercent -= 20
+    //   this.svgView = this.svgView.split(' ').map(item => Math.round(Number(item) + this.zoomVal)).join(' ')
+    // },
+    // handleZoomIn () {
+    //   this.zoomPercent += 20
+    //   this.svgView = this.svgView.split(' ').map(item => Math.round(Number(item) - this.zoomVal)).join(' ')
+    // },
+    // TODO: 面向过程 => 面向对象
+    /**
+     * 1. 根节点配置
+     * 2. 子节点配置
+     */
+    handleDrawMindMap (tree, options) {
+      const wrapper = document.getElementById('app-map')
+      const offsetWidth = wrapper.offsetWidth
+      const offsetHeight = wrapper.offsetHeight
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      svg.setAttribute('id', 'svg-container')
+      svg.setAttribute('version', '1.1')
+      svg.setAttribute('viewBox', `0 0 ${offsetWidth} ${offsetHeight}`)
+      svg.setAttribute('preserveAspectRatio', 'xMinYMin')
+      const elemDom = document.getElementById('svg-map')
+      elemDom.appendChild(svg)
+
       const treeData = this.mindMapDataLocal
-      // const nodeFontS = 14 // 字体大小
       const interval = 80 // 节点左右间隔大小
       const padding = 8 // 节点内部padding
       const marginY = 12 // 节点上下margin
@@ -74,6 +105,16 @@ export default {
       const fontColor = '#fff' // 默认字体颜色
       const borderColor = 'rgba(0, 0, 0, 0)' // 默认边框颜色
       const lineColor = '#55aaee' // 默认连线颜色
+
+      // this.options = Object.assign({}, this.options, options)
+      // this.treeData = tree
+      // this.interval = options.interval || 80 // 节点左右间隔大小
+      // this.padding = options.padding || 8 // 节点内部padding
+      // this.marginY = options.marginY || 12 // 节点上下margin
+      // this.borderWidth = options.borderWidth || 4
+      // this.fontColor = options.fontColor || '#fff' // 默认字体颜色
+      // this.borderColor = options.borderColor || 'rgba(0, 0, 0, 0)' // 默认边框颜色
+      // this.lineColor = options.lineColor || '#55aaee' // 默认连线颜色
 
       let _svgW = 0
       let _lastNodeN = 0
@@ -155,7 +196,7 @@ export default {
         fan.setAttribute('stroke-width', borderWidth)
         fan.setAttribute('stroke-linecap', 'round')
         fan.setAttribute('stroke-linejoin', 'round')
-        // fan.setAttribute('fill', node.bgColor ? node.bgColor : 'none')
+        fan.setAttribute('fill', node.bgColor ? node.bgColor : 'none')
         fan.setAttribute('fill', '#ccc')
         return fan
       }
@@ -168,7 +209,6 @@ export default {
         if (!node.parent) {
           return fan
         }
-        // svg.appendChild(fan)
         fan.setAttribute('d', getD(node))
         fan.setAttribute('stroke', node.lineColor ? node.lineColor : lineColor)
         fan.setAttribute('stroke-width', borderWidth)
@@ -179,7 +219,6 @@ export default {
       function getD (node) { // 获得节点的 d线
         const parent = node.parent
         if (parent.y !== node.y) {
-          // return 'M 0 300 Q 100 50 450 50 L 800 50'
           return `M${parent.x + parent.w} ${parent.y * _nodeH} Q${parent.x + parent.w + 40} ${node.y * _nodeH} ${node.x - 20} ${node.y * _nodeH} L${node.x + node.w} ${node.y * _nodeH}`
         } else {
           return `M${parent.x + parent.w} ${parent.y * _nodeH} L${node.x + node.w} ${node.y * _nodeH}`
@@ -188,8 +227,8 @@ export default {
       // 树状结构数据重构
       handleReBuildData(treeData, null)
       handleBuildSvg(treeData)
-      handleSetSvgContainerSize(_lastNodeN * 150, _lastNodeN * _nodeH + borderWidth * 100)
       // handleSetSvgContainerSize(_svgW, _lastNodeN * _nodeH + borderWidth)
+      handleSetSvgContainerSize(offsetWidth, offsetHeight)
     }
   }
 }

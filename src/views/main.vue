@@ -1,13 +1,15 @@
 <template>
   <div class="app-main">
     <div class="container">
-      <button
-        @click="test"
+      <!-- <button
+        @click="handleRebuildMindMap"
         style="margin-bottom: 5px;"
-      >Click Me</button>
+      >Click Me</button> -->
       <textarea
         v-model="markdown"
+        @input="handleRebuildMindMap"
         class="app-note"
+        :class="{'error-status': hasErrInput}"
         name="note"
         id="note"
         cols="30"
@@ -19,7 +21,7 @@
         class="app-map"
         id="app-map"
       >
-        <mind-map :mindMapData='mindMapData' />
+        <mind-map :mindMapTree='mindMapTree' />
       </div>
     </div>
   </div>
@@ -33,9 +35,9 @@ export default {
   },
   data () {
     return {
+      hasErrInput: false,
       markdown: '- Front end tech\n   - Compiler/language\n   - Reactive framework\n      - React\n      - Vue\n         - vue2.X\n   - packager\n      - Webpack\n      - Snowpack',
-      markdownHTML: '',
-      mindMapData: [
+      mindMapTree: [
         {
           title: 'Front end tech',
           borderColor: '#55aaee',
@@ -82,34 +84,69 @@ export default {
       ]
     }
   },
+  mounted () {
+    this.handleRebuildMindMap()
+  },
   methods: {
-    test () {
-      var nodes = this.markdown.split(/\n/gi)
-      var _nodes = nodes.map((item, index) => ({
-        id: index + 1,
-        parent: item.split('- ')[0].length / 3,
-        title: item.replace(/\s*-\s/g, '')
-      })).sort((a, b) => b.id - a.id)
-
-      function handleListToTree (_nodes) {
-        var firstNode = _nodes.shift()
-        for (let i = 0; i < _nodes.length; i++) {
-          if (firstNode.parent - 1 === _nodes[i].parent) {
-            if (!_nodes[i].children) {
-              _nodes[i].children = [firstNode]
-            } else {
-              _nodes[i].children.push(firstNode)
-            }
-            break
+    // 将行内容反序列化成 NTree
+    handleListToTree (nodes) {
+      var firstNode = nodes.shift()
+      for (let i = 0; i < nodes.length; i++) {
+        if (firstNode.parent - 1 === nodes[i].parent) {
+          if (!nodes[i].children) {
+            nodes[i].children = [firstNode]
+          } else {
+            nodes[i].children.unshift(firstNode)
           }
-        }
-        if (_nodes.length > 1) {
-          handleListToTree(_nodes)
+          break
         }
       }
-      handleListToTree(_nodes)
-      console.log(_nodes)
-      this.mindMapData = _nodes
+      if (nodes.length > 1) {
+        this.handleListToTree(nodes)
+      }
+    },
+    // 删除错误的节点
+    handleDeleteNode (nodes, nodeId) {
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i] && nodes[i].id === nodeId) {
+          nodes.splice(i, 1)
+          break
+        } else {
+          if (nodes[i].children && nodes[i].children.length > 1) {
+            this.handleDeleteNode(nodes[i].children, nodeId)
+          }
+        }
+      }
+      return nodes
+    },
+    // 简易版解析方法 TODO: 容错优化
+    handleRebuildMindMap () {
+      let errNodeId = 0
+      const lines = this.markdown.split(/\n/gi)
+      try {
+        const nodes = lines.map((item, index) => {
+          const parent = item.split('- ')[0].length / 3
+          const title = item.replace(/\s*-\s/, '')
+          const id = index + 1
+          // 正整数整除
+          if (!(/^([1-9][0-9]*|0)$/.test(parent) && /^\s*-\s/g.test(item))) {
+            errNodeId = id
+            throw new Error(`error input in line${id}`)
+          }
+          return {
+            id,
+            parent,
+            title
+          }
+        }).sort((a, b) => b.id - a.id)
+        this.mindMapTree = nodes
+        this.handleListToTree(nodes)
+        this.hasErrInput = false
+      } catch {
+        const copyTree = this.handleDeleteNode(this.mindMapTree.slice(), errNodeId)
+        this.mindMapTree = copyTree
+        this.hasErrInput = true
+      }
     }
   }
 }
@@ -134,7 +171,6 @@ export default {
 .app-note,
 .app-map {
   width: 100%;
-  border: 2px solid #ccc;
   padding: 15px;
   border-radius: 4px;
   overflow: auto;
@@ -147,11 +183,18 @@ export default {
   color: #333;
   font-size: 14px;
   box-sizing: border-box;
-  outline-color: #42b983;
+  outline: none;
+  border-width: 4px;
+  border-style: solid;
+  border-color: #42b983;
   transition: all ease 0.3s;
+  &.error-status {
+    border-color: #ff4d4f;
+  }
 }
 .app-map {
   text-align: left;
   background-color: #333;
+  border: 4px solid #ccc;
 }
 </style>
