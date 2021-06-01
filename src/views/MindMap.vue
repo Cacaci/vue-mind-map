@@ -85,19 +85,14 @@ export default {
      * 2. 子节点配置
      */
     handleDrawMindMap (tree, options) {
-      const wrapper = document.getElementById('app-map')
-      const offsetWidth = wrapper.offsetWidth
-      const offsetHeight = wrapper.offsetHeight
-
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
       svg.setAttribute('id', 'svg-container')
       svg.setAttribute('version', '1.1')
-      svg.setAttribute('viewBox', `0 0 ${offsetWidth} ${offsetHeight}`)
-      svg.setAttribute('preserveAspectRatio', 'xMinYMin')
       const elemDom = document.getElementById('svg-map')
       elemDom.appendChild(svg)
 
       const treeData = this.mindMapDataLocal
+
       const interval = 80 // 节点左右间隔大小
       const padding = 8 // 节点内部padding
       const marginY = 12 // 节点上下margin
@@ -120,7 +115,7 @@ export default {
       let _lastNodeN = 0
       const _nodeH = padding * 2 + marginY * 2
 
-      function handleReBuildData (d, parent) { // 树状结构数据重构
+      function handleReBuildData (d, parent) { // 树状结构数据重构 合并节点配置项
         d.forEach((v, i) => {
           v.parent = parent
           if (v.children && v.children.length > 0) {
@@ -133,8 +128,15 @@ export default {
           }
         })
       }
+      /**
+       * @lastNode 当前节点
+       * @len 同层级的节点数
+       * @i 同层级的第几个节点，从零开始
+       * @desc 根据子节点的最后一个节点去计算父节点的偏移
+       */
       function parentY (lastNode, len, i) { // 计算节点的y坐标
         const parent = lastNode.parent
+        debugger
         if (len === (i + 1) && parent) {
           const s = parent.children[0].y
           parent.y = s + (lastNode.y - s) / 2
@@ -169,13 +171,14 @@ export default {
 
         const textH = Math.ceil(textTag.getBBox().height)
         node.w = Math.ceil(textTag.getBBox().width) + padding * 2
-        node.x = parentx + parentw + intervalNow + 0
+        node.x = parentx + parentw + intervalNow + 0 // 每个节点相对起始点的偏移量
         // insertBefore appendChild prepend append
         gTag.insertBefore(drawBorder(node), textTag)
         svg.prepend(drawLine(node), gTag)
         // 文本居中
         const textW = textTag.getBBox().width
         textTag.setAttribute('x', (node.w - textW - borderWidth * 2) * 0.5)
+        // 文本垂直水平偏移
         if (node.parent) {
           gTag.setAttribute('transform', `translate(${node.x + padding},${node.y * (_nodeH) + textH / 2 - 20})`)
         } else {
@@ -227,8 +230,8 @@ export default {
       // 树状结构数据重构
       handleReBuildData(treeData, null)
       handleBuildSvg(treeData)
-      // handleSetSvgContainerSize(_svgW, _lastNodeN * _nodeH + borderWidth)
-      handleSetSvgContainerSize(offsetWidth, offsetHeight)
+      console.log(treeData)
+      handleSetSvgContainerSize(_svgW, _lastNodeN * _nodeH + borderWidth)
     }
   }
 }
